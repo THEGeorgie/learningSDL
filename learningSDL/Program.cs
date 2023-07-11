@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Xml.Schema;
 using SDL2;
 using static SDL2.SDL;
@@ -14,17 +15,12 @@ namespace TesingAndLearning
             var renderer = IntPtr.Zero;
 
             SDL_Init(SDL_INIT_VIDEO);
-            //SDL_CreateWindow("Hello", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WindowFlags.SDL_WINDOW_SHOWN);
-            //SDL_CreateRenderer(window, 0, SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
             SDL_CreateWindowAndRenderer(800, 600,0,out window,out renderer);
+            SDL_SetWindowTitle(window, "SDL LEARNING");
             SDL_SetRenderDrawColor(renderer, 255, 0,0,255);
             SDL_RenderClear(renderer);
 
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            SDL_RenderDrawPoint(renderer, 800 / 2, 600 / 2);
-
-            SDL_SetRenderDrawColor(renderer, 255,255,255,255);
             SDL_Rect rect;
             rect.h = 100;
             rect.w = 100;
@@ -40,18 +36,17 @@ namespace TesingAndLearning
             //SDL_Rect intersection;
 
             //SDL_IntersectRect(ref rect, ref rect1, out intersection);
-
-            SDL_RenderDrawRect(renderer,ref rect);
-            SDL_SetRenderDrawColor(renderer, 9, 255, 9, 255);
-            SDL_RenderDrawRect(renderer,ref rect1);
             //SDL_SetRenderDrawColor(renderer, 0,0,255,255);
             //SDL_RenderFillRect(renderer, ref intersection);
             SDL_Event events;
+            IntPtr keyboardState;
+            int arrayKeys;
             //Main loop
             bool loop = false;
             while (!loop)
             {
-
+                keyboardState = SDL_GetKeyboardState(out arrayKeys);
+                //Console.WriteLine(arrayKeys);
                 //event listener
                 while (SDL_PollEvent(out events) == 1)
                 {
@@ -62,29 +57,30 @@ namespace TesingAndLearning
                             break;
                         default:
                             break;
-                        case SDL.SDL_EventType.SDL_KEYDOWN:
-                            //key listener
-                            switch (events.key.keysym.sym)
-                            {
-                                case SDL.SDL_Keycode.SDLK_ESCAPE:
-                                    loop = true;
-                                    break;
-                                case SDL_Keycode.SDLK_RIGHT:
-                                    rect.x += 10;
-                                    break;
-                                case SDL.SDL_Keycode.SDLK_LEFT:
-                                    rect.x -= 10;
-                                    break;
-                                case SDL.SDL_Keycode.SDLK_UP:
-                                    rect.y -= 10;
-                                    break;
-                                case SDL.SDL_Keycode.SDLK_DOWN:
-                                    rect.y += 10;
-                                    break;
-
-                            }
-                            break;
                     }
+                    //key listener
+                    if (events.type == SDL_EventType.SDL_KEYDOWN) {
+                        if (GetKey(SDL_Keycode.SDLK_RIGHT) == true) {
+                            rect.x += 10;
+                        }
+                        if (GetKey(SDL_Keycode.SDLK_LEFT) == true)
+                        {
+                            rect.x -= 10;
+                        }
+                        if (GetKey(SDL_Keycode.SDLK_UP) == true)
+                        {
+                            rect.y -= 10;
+                        }
+                        if (GetKey(SDL_Keycode.SDLK_DOWN) == true)
+                        {
+                            rect.y += 10;
+                        }
+                        if (GetKey(SDL_Keycode.SDLK_ESCAPE) == true)
+                        {
+                            loop = true;
+                        }
+                    }
+
                 }
 
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
@@ -110,7 +106,17 @@ namespace TesingAndLearning
             SDL_DestroyRenderer(renderer);
             return 0;
         }
-
+        static bool GetKey(SDL.SDL_Keycode _keycode)
+        {
+            int arraySize;
+            bool isKeyPressed = false;
+            IntPtr origArray = SDL.SDL_GetKeyboardState(out arraySize);
+            byte[] keys = new byte[arraySize];
+            byte keycode = (byte)SDL.SDL_GetScancodeFromKey(_keycode);
+            Marshal.Copy(origArray, keys, 0, arraySize);
+            isKeyPressed = keys[keycode] == 1;
+            return isKeyPressed;
+        }
         void notUSED()
         {
             if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
