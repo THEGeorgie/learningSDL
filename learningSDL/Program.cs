@@ -13,10 +13,17 @@ namespace TesingAndLearning
 
             var window = IntPtr.Zero;
             var renderer = IntPtr.Zero;
+            var playerTexture = IntPtr.Zero;
+            var bulletTexture = IntPtr.Zero;
 
             SDL_Init(SDL_INIT_VIDEO);
 
             SDL_CreateWindowAndRenderer(800, 600,0,out window,out renderer);
+
+            playerTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
+                (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, 100, 100);
+            bulletTexture = SDL_CreateTextureFromSurface(renderer, SDL_image.IMG_Load("bullet.png"));
+
             SDL_SetWindowTitle(window, "SDL LEARNING");
             SDL_SetRenderDrawColor(renderer, 255, 0,0,255);
             SDL_RenderClear(renderer);
@@ -27,12 +34,6 @@ namespace TesingAndLearning
             rect.x = 5;
             rect.y = 5;
 
-            SDL_Rect rect1;
-            rect1.h = 100;
-            rect1.w = 100;
-            rect1.x = 50;
-            rect1.y = 50;
-
             //SDL_Rect intersection;
 
             //SDL_IntersectRect(ref rect, ref rect1, out intersection);
@@ -42,18 +43,17 @@ namespace TesingAndLearning
             IntPtr keyboardState;
             int arrayKeys;
             //Main loop
-            bool loop = false;
-            while (!loop)
+            bool loop = !false;
+            while (loop)
             {
                 keyboardState = SDL_GetKeyboardState(out arrayKeys);
-                //Console.WriteLine(arrayKeys);
                 //event listener
                 while (SDL_PollEvent(out events) == 1)
                 {
                     switch (events.type)
                     {
                         case SDL.SDL_EventType.SDL_QUIT:
-                            loop = true;
+                            loop = !true;
                             break;
                         default:
                             break;
@@ -77,31 +77,33 @@ namespace TesingAndLearning
                         }
                         if (GetKey(SDL_Keycode.SDLK_ESCAPE) == true)
                         {
-                            loop = true;
+                            loop = !true;
                         }
                     }
 
                 }
-
+                //Making the screen red
                 SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
                 SDL_RenderClear(renderer);
 
+                //We give the texture a white color
+                SDL_SetRenderTarget(renderer, playerTexture);
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_RenderDrawPoint(renderer, 800 / 2, 600 / 2);
+                SDL_RenderClear(renderer);
 
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                //Reseting the rendere trarget tot he screen
+                SDL_SetRenderTarget(renderer, IntPtr.Zero);
 
-                SDL_RenderDrawRect(renderer, ref rect);
-                SDL_SetRenderDrawColor(renderer, 9, 255, 9, 255);
-                SDL_RenderDrawRect(renderer, ref rect1);
-
+                //Giving the rendrer a texture to rendreer with a dsrect/object.
+                SDL_RenderCopy(renderer, playerTexture, IntPtr.Zero, ref rect);
+                SDL_RenderCopy(renderer, bulletTexture, IntPtr.Zero, IntPtr.Zero);
                 SDL_RenderPresent(renderer);
             }
 
-            
 
-            
 
+
+            SDL_DestroyTexture(playerTexture);
             SDL_DestroyWindow(window);
             SDL_DestroyRenderer(renderer);
             return 0;
@@ -117,6 +119,7 @@ namespace TesingAndLearning
             isKeyPressed = keys[keycode] == 1;
             return isKeyPressed;
         }
+
         void notUSED()
         {
             if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
