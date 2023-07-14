@@ -9,16 +9,35 @@ namespace TesingAndLearning
     class Program
     {
 
+        struct Clock
+        {
+            public Clock()
+            {
+            }
+            UInt32 last_tick_time = 0;
+            public int delta = 0;
+            void tick()
+            {
+                UInt32 tick_time = SDL_GetTicks();
+                delta = tick_time - last_tick_time;
+                last_tick_time = tick_time;
+            }
+        }
+
         static int Main(String[] args) {
+
+
 
             var window = IntPtr.Zero;
             var renderer = IntPtr.Zero;
             var playerTexture = IntPtr.Zero;
             var bulletTexture = IntPtr.Zero;
+            int SCREEN_WIDTH = 800;
+            int SCREEN_HEIGHT = 600;
 
             SDL_Init(SDL_INIT_VIDEO);
 
-            SDL_CreateWindowAndRenderer(800, 600,0,out window,out renderer);
+            SDL_CreateWindowAndRenderer(SCREEN_WIDTH, SCREEN_HEIGHT, 0,out window,out renderer);
 
             playerTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
                 (int)SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, 100, 100);
@@ -33,6 +52,16 @@ namespace TesingAndLearning
             rect.w = 100;
             rect.x = 5;
             rect.y = 5;
+            SDL_Rect rectBullet;
+            rectBullet.h = 20;
+            rectBullet.w = 20;
+            rectBullet.x = 5;
+            rectBullet.y = 5;
+            SDL_Rect Area;
+            Area.h = SCREEN_HEIGHT;
+            Area.w = SCREEN_WIDTH;
+            Area.x = 0;
+            Area.y = 0;
 
             //SDL_Rect intersection;
 
@@ -47,6 +76,21 @@ namespace TesingAndLearning
             while (loop)
             {
                 keyboardState = SDL_GetKeyboardState(out arrayKeys);
+                Clock clock;
+
+
+                //Making the screen red
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                SDL_RenderClear(renderer);
+
+                //We give the texture a white color
+                SDL_SetRenderTarget(renderer, playerTexture);
+                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                SDL_RenderClear(renderer);
+
+                //Reseting the rendere trarget to the screen
+                SDL_SetRenderTarget(renderer, IntPtr.Zero);
+
                 //event listener
                 while (SDL_PollEvent(out events) == 1)
                 {
@@ -79,27 +123,25 @@ namespace TesingAndLearning
                         {
                             loop = !true;
                         }
+                        if (GetKey(SDL_Keycode.SDLK_SPACE))
+                        {
+                            while (rectBullet.x < Area.w && rectBullet.y < Area.h) {
+                                rectBullet.x += 1 * clock.delta;
+                                SDL_RenderCopy(renderer, playerTexture, IntPtr.Zero, ref rect);
+                                SDL_RenderCopy(renderer, bulletTexture, ref Area, ref rectBullet);
+                                SDL_RenderPresent(renderer);
+                            }
+                            rectBullet.x = 0;
+                            rectBullet.y = 0;
+                        }
                     }
 
                 }
-                //Making the screen red
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                SDL_RenderClear(renderer);
-
-                //We give the texture a white color
-                SDL_SetRenderTarget(renderer, playerTexture);
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_RenderClear(renderer);
-
-                //Reseting the rendere trarget tot he screen
-                SDL_SetRenderTarget(renderer, IntPtr.Zero);
 
                 //Giving the rendrer a texture to rendreer with a dsrect/object.
                 SDL_RenderCopy(renderer, playerTexture, IntPtr.Zero, ref rect);
-                SDL_RenderCopy(renderer, bulletTexture, IntPtr.Zero, IntPtr.Zero);
                 SDL_RenderPresent(renderer);
             }
-
 
 
 
@@ -120,121 +162,7 @@ namespace TesingAndLearning
             return isKeyPressed;
         }
 
-        void notUSED()
-        {
-            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
-            {
-                Console.WriteLine("ERROR INNIT");
-            }
-
-            int SCREEN_WIDTH = 1000;
-            int SCREEN_HEIGHT = 1000;
-
-            // int OBJECT_WIDTH = 100;
-            // int OBJECT_HEIGHT = 100;
-
-
-            // int startPosX = (SCREEN_WIDTH / 2) - (OBJECT_WIDTH  / 2);
-            // int startPosY = (SCREEN_HEIGHT / 2) - (OBJECT_HEIGHT / 2);
-
-            // int RelativePosX = startPosX;
-            // int RelativePosY = startPosY;
-
-            Console.WriteLine("SDL init succeede");
-            bool loop = false;
-            var window = IntPtr.Zero;
-            var renderer = IntPtr.Zero;
-            var texture = IntPtr.Zero;
-            var red_texture = IntPtr.Zero;
-            var blue_texture = IntPtr.Zero;
-
-
-            // Init Window
-            window = SDL_CreateWindow("Hello World", SDL_WINDOWPOS_CENTERED,
-                SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WindowFlags.SDL_WINDOW_SHOWN);
-
-            //Init Renderer
-            renderer = SDL_CreateRenderer(window, -1, SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
-
-            //Init texture for image
-            texture = SDL_CreateTextureFromSurface(renderer, SDL_LoadBMP("image.bmp"));
-
-            //Init texture/Creating a texture
-            blue_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888,
-                (int)SDL.SDL_TextureAccess.SDL_TEXTUREACCESS_TARGET, 100, 100);
-
-            //init
-            SDL_Rect dstrect;
-            //Object position/size
-            dstrect.x = 20;
-            dstrect.y = 20;
-            dstrect.h = 100;
-            dstrect.w = 100;
-
-            //Which texture should the renderer render/target
-            SDL_SetRenderTarget(renderer, blue_texture);
-            //Which color should the renderer draw on the texture
-            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-            //Clears the rendrere for the new rendrer aka so that the texture would appear and not black
-            SDL_RenderClear(renderer);
-
-            //Setting the rendere back to the window aka not pointing it to junk memory (which is bad)
-            SDL_SetRenderTarget(renderer, IntPtr.Zero);
-
-            //Taking a copy of our now drawn texture to the rendrer
-            SDL_RenderCopy(renderer, blue_texture, IntPtr.Zero, ref dstrect);
-            //Displaying the rendrers to the screen
-            SDL_RenderPresent(renderer);
-
-            //Init event
-            SDL_Event events;
-            //Main loop
-            while (!loop)
-            {
-
-                //event listener
-                while (SDL_PollEvent(out events) == 1)
-                {
-                    switch (events.type)
-                    {
-                        case SDL.SDL_EventType.SDL_QUIT:
-                            loop = true;
-                            break;
-                        default:
-                            break;
-                        case SDL.SDL_EventType.SDL_KEYDOWN:
-                            //key listener
-                            switch (events.key.keysym.sym)
-                            {
-                                case SDL.SDL_Keycode.SDLK_ESCAPE:
-                                    loop = true;
-                                    break;
-                                case SDL_Keycode.SDLK_RIGHT:
-                                    dstrect.x += 10;
-                                    var pixles = IntPtr.Size;
-                                    SDL_UpdateTexture(blue_texture, ref dstrect, IntPtr.MaxValue, 100 * 4);
-                                    Console.WriteLine(dstrect.x);
-
-                                    break;
-
-                            }
-                            break;
-                    }
-                }
-
-                //Taking a copy of our now drawn texture to the rendrer
-                //Displaying the rendrers to the screen
-                SDL_RenderPresent(renderer);
-
-            }
-
-            //When the program is finished
-            SDL.SDL_DestroyTexture(blue_texture);
-            SDL.SDL_DestroyRenderer(renderer);
-            SDL.SDL_DestroyWindow(window);
-            SDL.SDL_Quit();
-
-        }
+        
     }
     
 }
