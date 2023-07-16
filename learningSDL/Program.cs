@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Xml.Schema;
 using SDL2;
@@ -8,21 +9,23 @@ namespace TesingAndLearning
 {
     class Program
     {
-
-        struct Clock
-        {
-            public Clock()
-            {
-            }
-            UInt32 last_tick_time = 0;
-            public int delta = 0;
-            void tick()
-            {
-                UInt32 tick_time = SDL_GetTicks();
-                delta = tick_time - last_tick_time;
-                last_tick_time = tick_time;
-            }
+        public struct POS {
+            public int RELATIVE_POS_X;
+            public int RELATIVE_POS_Y;
+            public int START_POS_X;
+            public int START_POS_Y;
         }
+        public struct buffer
+        {
+            public buffer(float x, float y)
+            {
+                this.x_pos = x;
+                this.y_pos = y;
+            }
+            public float y_pos;
+            public float x_pos;
+        }
+
 
         static int Main(String[] args) {
 
@@ -34,6 +37,7 @@ namespace TesingAndLearning
             var bulletTexture = IntPtr.Zero;
             int SCREEN_WIDTH = 800;
             int SCREEN_HEIGHT = 600;
+            float TARGET_FPS = 1000 / 144;
 
             SDL_Init(SDL_INIT_VIDEO);
 
@@ -47,16 +51,29 @@ namespace TesingAndLearning
             SDL_SetRenderDrawColor(renderer, 255, 0,0,255);
             SDL_RenderClear(renderer);
 
+            POS posPlayer;
+            posPlayer.RELATIVE_POS_Y = 0;
+            posPlayer.RELATIVE_POS_X = 0;
+            buffer PlayerBuff = new buffer(0,0);
+            buffer BullertBuffer = new buffer(0, 0);
+
             SDL_Rect rect;
             rect.h = 100;
             rect.w = 100;
-            rect.x = 5;
-            rect.y = 5;
+            rect.x = posPlayer.START_POS_X = 5;
+            rect.y = posPlayer.START_POS_Y = 5;
+             float y_pos = 0;
+             float x_pos = 0;
+
+
             SDL_Rect rectBullet;
             rectBullet.h = 20;
             rectBullet.w = 20;
-            rectBullet.x = 5;
-            rectBullet.y = 5;
+            rectBullet.x = posPlayer.RELATIVE_POS_X;
+            rectBullet.y = posPlayer.RELATIVE_POS_Y;
+            float y_posB = 0;
+            float x_posB = 0;
+
             SDL_Rect Area;
             Area.h = SCREEN_HEIGHT;
             Area.w = SCREEN_WIDTH;
@@ -73,10 +90,18 @@ namespace TesingAndLearning
             int arrayKeys;
             //Main loop
             bool loop = !false;
+            bool pause = false;
+            UInt64 oldTime = SDL_GetTicks();
+            UInt64 newTime;
+            float deltaTime = 0;
             while (loop)
             {
+                newTime = SDL_GetTicks();
+                deltaTime = (newTime - oldTime);
+                rectBullet.x = posPlayer.RELATIVE_POS_X + 50;
+                rectBullet.y = posPlayer.RELATIVE_POS_Y + 50;
+
                 keyboardState = SDL_GetKeyboardState(out arrayKeys);
-                Clock clock;
 
 
                 //Making the screen red
@@ -92,32 +117,46 @@ namespace TesingAndLearning
                 SDL_SetRenderTarget(renderer, IntPtr.Zero);
 
                 //event listener
+
                 while (SDL_PollEvent(out events) == 1)
                 {
                     switch (events.type)
                     {
                         case SDL.SDL_EventType.SDL_QUIT:
+                            pause = true;
+                            while (pause) {
+
+                            }
                             loop = !true;
                             break;
                         default:
                             break;
                     }
-                    //key listener
+                    //key 
                     if (events.type == SDL_EventType.SDL_KEYDOWN) {
                         if (GetKey(SDL_Keycode.SDLK_RIGHT) == true) {
-                            rect.x += 10;
+                            x_pos += 100 * (TARGET_FPS / 1000);
+                            Console.WriteLine(x_pos);
+                            rect.x += (int)x_pos;
+                            posPlayer.RELATIVE_POS_X += 10;
                         }
                         if (GetKey(SDL_Keycode.SDLK_LEFT) == true)
                         {
-                            rect.x -= 10;
+                            x_pos -= 100 * (deltaTime / 1000);
+                            rect.x -= (int)x_pos;
+                            posPlayer.RELATIVE_POS_X -= 10;
                         }
                         if (GetKey(SDL_Keycode.SDLK_UP) == true)
                         {
-                            rect.y -= 10;
+                            y_pos -= 100 * (deltaTime / 1000);
+                            rect.y -= (int)y_pos;
+                            posPlayer.RELATIVE_POS_Y -= 10;
                         }
                         if (GetKey(SDL_Keycode.SDLK_DOWN) == true)
                         {
-                            rect.y += 10;
+                            y_pos += 100 * (deltaTime / 1000);
+                            rect.y += (int)y_pos;
+                            posPlayer.RELATIVE_POS_Y += 10;
                         }
                         if (GetKey(SDL_Keycode.SDLK_ESCAPE) == true)
                         {
@@ -126,19 +165,24 @@ namespace TesingAndLearning
                         if (GetKey(SDL_Keycode.SDLK_SPACE))
                         {
                             while (rectBullet.x < Area.w && rectBullet.y < Area.h) {
-                                rectBullet.x += 1 * clock.delta;
+                                x_posB += 10 * (TARGET_FPS / 1000);
+                                rectBullet.x = (int)x_posB;
+                                Console.WriteLine((int)BullertBuffer.x_pos);
+                                oldTime = newTime;
                                 SDL_RenderCopy(renderer, playerTexture, IntPtr.Zero, ref rect);
                                 SDL_RenderCopy(renderer, bulletTexture, ref Area, ref rectBullet);
                                 SDL_RenderPresent(renderer);
                             }
-                            rectBullet.x = 0;
-                            rectBullet.y = 0;
+                            BullertBuffer.x_pos = 0;
+                            rectBullet.x = posPlayer.RELATIVE_POS_X;
+                            rectBullet.y = posPlayer.RELATIVE_POS_Y;
                         }
                     }
 
                 }
 
                 //Giving the rendrer a texture to rendreer with a dsrect/object.
+                oldTime = newTime;
                 SDL_RenderCopy(renderer, playerTexture, IntPtr.Zero, ref rect);
                 SDL_RenderPresent(renderer);
             }
